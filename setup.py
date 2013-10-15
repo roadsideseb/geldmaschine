@@ -33,6 +33,8 @@ setup(
         'beautifulsoup4',
         'blessings',
         'babel',
+        'six',
+        'keyring',
     ],
     license="BSD",
     zip_safe=False,

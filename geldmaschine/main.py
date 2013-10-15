@@ -9,6 +9,7 @@ Usage:
     geldmaschine check [--debug] [-d <webdriver>] <bank_code> ...
     geldmaschine -h | --help
 """
+import six
 import logging
 import pkgutil
 import requests
@@ -60,7 +61,7 @@ class Geldmachine(object):
         return self.scrapers[scraper_class.scrape_code]
 
     def get_scrapers(self, scraper_pkg):
-        module = pkgutil.get_loader(scraper_pkg).load_module()
+        module = pkgutil.get_loader(scraper_pkg).load_module(scraper_pkg)
         for __, submodname, ispkg in pkgutil.iter_modules(module.__path__):
             subpkg = "{}.{}".format(scraper_pkg, submodname)
             if ispkg:
@@ -78,17 +79,17 @@ class Geldmachine(object):
             self.scrapers[sc.scrape_code] = sc
 
     def list(self):
-        print(term.blue("=" * 50))
-        print(term.blue("{0:15}{1}".format("Scaper ID", "Class")))
-        print(term.blue("=" * 50))
+        six.print_(term.blue("=" * 50))
+        six.print_(term.blue("{0:15}{1}".format("Scaper ID", "Class")))
+        six.print_(term.blue("=" * 50))
 
         for code, klass in self.scrapers.items():
-            print("{term.green}{0:15}{term.normal}{1}".format(
+            six.print_("{term.green}{0:15}{term.normal}{1}".format(
                 code,
                 klass.__name__,
                 term=term
             ))
-        print(term.blue("=" * 50))
+        six.print_(term.blue("=" * 50))
 
     def check_banks(self, bank_codes=None):
         accounts = {}
@@ -111,16 +112,16 @@ class Geldmachine(object):
     def print_scrapers(self):
         for scrape_code, scraper_class in self.scrapers.iteritems():
             name = getattr(scraper_class, 'name', scraper_class.__name__)
-            print(u'{}:\n\t{}\n'.format(scrape_code, name))
+            six.print_(u'{}:\n\t{}\n'.format(scrape_code, name))
 
     def print_summary(self, accounts):
         self.get_conversion_rates(accounts)
 
         balances = []
         for bank_name in sorted(accounts.keys()):
-            print(term.bold(bank_name))
-            print(term.bold(u'-' * len(bank_name)))
-            print()
+            six.print_(term.bold(bank_name))
+            six.print_(term.bold(u'-' * len(bank_name)))
+            six.print_()
 
             for account in accounts[bank_name].values():
                 base_msg = [
@@ -141,7 +142,7 @@ class Geldmachine(object):
                 else:
                     base_msg = [u"{t.green}"] + base_msg
 
-                print(u''.join(base_msg).format(
+                six.print_(u''.join(base_msg).format(
                     acct_name=account.name,
                     acct_balance=format_currency(
                         account.balance,
@@ -150,12 +151,12 @@ class Geldmachine(object):
                     t=term,
                     cbalance=format_currency(cbalance, self.display_currency),
                 ))
-            print()
+            six.print_()
 
-        print()
-        print(term.bold(u'=' * 80))
+        six.print_()
+        six.print_(term.bold(u'=' * 80))
         msg = u"{:40}{t.bold}{t.gray}{balance:>40}{t.normal}"
-        print(msg.format(
+        six.print_(msg.format(
             'Sum Total',
             balance=format_currency(sum(balances), self.display_currency),
             t=term
@@ -185,9 +186,7 @@ class Geldmachine(object):
 
 
 def main():
-    arguments = docopt(__doc__, version='Naval Fate 2.0')
-
-    print(arguments)
+    arguments = docopt(__doc__, version='Geldmaschine')
 
     if arguments.get('--debug'):
         logging.basicConfig(level=logging.DEBUG)
