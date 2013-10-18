@@ -1,6 +1,7 @@
 *.py[cod]
 *.sw[po]
 *.log
+env.sh
 
 # C extensions
 *.so
