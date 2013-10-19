@@ -19,6 +19,8 @@ class CoastCapitalScraper(BaseAccountScraper):
 
         question = self.browser.find_by_css("label[for=answer]")[0].text
 
+        #TODO: use the full questions here and make it work with all available
+        # question types.
         if 'father' in question:
             self.browser.fill('answer', os.getenv('CC_FATHER'))
         elif 'grandmother' in question:
