@@ -4,7 +4,17 @@ import os
 from bs4 import BeautifulSoup
 from decimal import Decimal as D
 
-from ..base import BaseAccountScraper
+from ..base import BaseAccountScraper, BaseAccountCredentials
+
+
+class MlpCredentials(BaseAccountCredentials):
+
+    def __init__(self, alias, pin):
+        self.alias = alias
+        self.pin = pin
+
+    def __unicode__(self):
+        return "MLP {}".format(self.alias)
 
 
 class MlpAccountScraper(BaseAccountScraper):

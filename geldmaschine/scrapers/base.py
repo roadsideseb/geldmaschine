@@ -12,9 +12,8 @@ class Account(object):
     currency = None
 
     def __init__(self, name, currency):
-        if not currency:
+        if not currency and not self.currency:
             raise ScraperError("No currency specified for account")
-
         self.currency = currency
         self.name = name
         self.bank_code = None
@@ -26,6 +25,10 @@ class Account(object):
             setattr(self, key, value)
 
 
+class BaseAccountCredentials(object):
+    pass
+
+
 class BaseAccountScraper(object):
     dont_quit = False
     scrape_code = None
@@ -33,7 +36,7 @@ class BaseAccountScraper(object):
 
     def __init__(self, driver_name='phantomjs'):
         self.driver_name = driver_name
-        self.logger = logging.getLogger('geldspeicher')
+        self.logger = logging.getLogger('geldmaschine')
 
         if not self.scrape_code:
             raise ScraperError("Scraper has no 'scrape_code' specified")

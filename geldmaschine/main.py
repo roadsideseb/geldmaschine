@@ -9,9 +9,13 @@ Usage:
     geldmaschine check [--debug] [-d <webdriver>] <bank_code> ...
     geldmaschine -h | --help
 """
+import os
 import six
+import json
+import getpass
 import logging
 import pkgutil
+import keyring
 import requests
 
 from docopt import docopt
@@ -25,6 +29,8 @@ logger = logging.getLogger('geldmaschine')
 
 term = Terminal()
 
+# loading keyring default-path doesn't work
+keyring.util.platform_.data_root = lambda: os.path.expanduser('~/.geldmaschine/')
 
 CURRENCY_URL = 'http://rate-exchange.appspot.com/currency?from={fc}&to={tc}'
 
@@ -35,6 +41,15 @@ class Geldmachine(object):
         self.driver = driver
         self.debug = debug
 
+        # just make sure that we have a folder in the users directory that we
+        # can use to store data such as the encrypted keyring in.
+        if not os.path.exists(os.path.expanduser('~/.geldmaschine')):
+            os.makedirs(os.path.expanduser('~/.geldmaschine'))
+
+        # keyring config settings
+        self.service = 'geldmaschine:credentials'
+        self.username = getpass.getuser()
+
         self.browsers = []
 
         self.display_currency = 'AUD'
@@ -43,9 +58,15 @@ class Geldmachine(object):
 
         self.load_scrapers()
 
+        self.load_credentials()
+
     def __del__(self):
         if not self.debug:
             [b.quit() for b in self.browsers]
+
+    def load_credentials(self):
+        data = keyring.get_password(self.service, self.username)
+        self.credentials = json.loads(data)
 
     def _load_scraper(self, name):
         mod_name, class_name = name.rsplit('.', 1)
@@ -79,12 +100,12 @@ class Geldmachine(object):
             self.scrapers[sc.scrape_code] = sc
 
     def list(self):
-        six.print_(term.blue("=" * 50))
-        six.print_(term.blue("{0:15}{1}".format("Scaper ID", "Class")))
-        six.print_(term.blue("=" * 50))
+        six.print_(term.blue("=" * 60))
+        six.print_(term.blue("{0:30}{1}".format("Scaper ID", "Class")))
+        six.print_(term.blue("=" * 60))
 
         for code, klass in self.scrapers.items():
-            six.print_("{term.green}{0:15}{term.normal}{1}".format(
+            six.print_("{term.green}{0:30}{term.normal}{1}".format(
                 code,
                 klass.__name__,
                 term=term

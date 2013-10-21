@@ -35,6 +35,8 @@ setup(
         'babel',
         'six',
         'keyring',
+        'pycrypto',  # for encrypted file backend in keyring
+        'jsonpickle',
     ],
     license="BSD",
     zip_safe=False,

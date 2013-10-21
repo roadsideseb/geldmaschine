@@ -9,12 +9,29 @@ from json_schema_toolkit import document
 class JsonField(object):
     name = None
     type = None
+    title = None
+    description = None
 
     @classmethod
     def schema(cls):
-        return {
-            'type': cls.type,
-        }
+        schema = {'type': cls.type}
+        if cls.title:
+            schema['title'] = cls.title
+        if cls.description:
+            schema['description'] = cls.description
+        return schema
+
+
+class AnyField(JsonField):
+    type = 'any'
+
+
+class NullField(JsonField):
+    type = 'null'
+
+
+class NumberField(JsonField):
+    type = 'number'
 
 
 class IntegerField(JsonField):
@@ -68,7 +85,13 @@ class AccountMetaClass(type):
 
 class BaseAccount(metaclass=AccountMetaClass):
     name = StringField()
-    number = IntegerField()
+    number = StringField()
+    bank_code = StringField()
+    bank = StringField()
+    country = StringField()
+
+    balance = NumberField()
+    currency = StringField()
 
     @classmethod
     def schema(cls):
