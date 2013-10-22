@@ -3,8 +3,6 @@ import json
 
 from collections import OrderedDict
 
-from json_schema_toolkit import document
-
 
 class JsonField(object):
     name = None
