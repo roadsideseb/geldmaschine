@@ -8,6 +8,8 @@ Geldmaschine
 .. image:: https://pypip.in/d/geldmaschine/badge.png
         :target: https://crate.io/packages/geldmaschine?version=latest
 
+.. image:: https://d2weczhvl823v0.cloudfront.net/elbaschid/dockbot/trend.png
+
 Travelling around and living in different countries has lead to me having bank
 account in a few countries. Checking the balances for each account in each
 country is teadious and boring. As a developer with an appreciation for TDD,
