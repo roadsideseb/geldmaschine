@@ -4,11 +4,13 @@
 Geldmachine
 
 Usage:
+    geldmaschine open <bank_code>
     geldmaschine list [--debug]
     geldmaschine all [--debug] [-d <webdriver>]
-    geldmaschine check [--debug] [-d <webdriver>] <bank_code> ...
+    geldmaschine check [--debug] [-d <webdriver>] <bank_code>
     geldmaschine -h | --help
 """
+import os
 import six
 import logging
 import pkgutil
@@ -26,7 +28,8 @@ logger = logging.getLogger('geldmaschine')
 term = Terminal()
 
 
-CURRENCY_URL = 'http://rate-exchange.appspot.com/currency?from={fc}&to={tc}'
+OPEN_EXCHANGE_API_KEY = os.getenv('OPEN_EXCHANGE_API_KEY')
+OPEN_EXCHANGE_URL = 'http://openexchangerates.org/api/latest.json?app_id={api_key}'
 
 
 class Geldmachine(object):
@@ -78,6 +81,13 @@ class Geldmachine(object):
         for sc in BaseAccountScraper.__subclasses__():
             self.scrapers[sc.scrape_code] = sc
 
+    def open(self, bank_code):
+        six.print_('Logging into {} website'.format(bank_code))
+
+        scraper = self.scrapers[bank_code]('firefox')
+        scraper.dont_quit = True  # prevent selenium from shutting down
+        scraper.login()
+
     def list(self):
         six.print_(term.blue("=" * 50))
         six.print_(term.blue("{0:15}{1}".format("Scaper ID", "Class")))
@@ -103,9 +113,17 @@ class Geldmachine(object):
         for code in bank_codes:
             scraper = self.scrapers[code](self.driver)
             scraper.dont_quit = True  # prevent selenium from shutting down
-            scraper.run()
-            accounts[scraper.get_name()] = scraper.get_accounts()
-            self.browsers.append(scraper.browser)
+            try:
+                scraper.run()
+            except Exception as exc:
+                six.print_(
+                    "Error running scarper {}. Skipping it!".format(code)
+                )
+                six.print_(exc.args)
+                return
+            else:
+                accounts[scraper.get_name()] = scraper.get_accounts()
+                self.browsers.append(scraper.browser)
 
         self.print_summary(accounts)
 
@@ -163,26 +181,18 @@ class Geldmachine(object):
         ))
 
     def get_conversion_rates(self, accounts):
-        currencies = set()
-        for acct_dict in accounts.values():
-            for account in acct_dict.values():
-                if account.currency != self.display_currency:
-                    currencies.add(account.currency)
-        for currency in currencies:
-            try:
-                rsp = requests.get(
-                    CURRENCY_URL.format(
-                        fc=currency,
-                        tc=self.display_currency
-                    )
-                )
-            except Exception:
-                logger.error(
-                    "could not retrieve currency {} conversion rate".format(
-                        currency
-                    )
-                )
-            self.conversion_rates[currency] = D(rsp.json().get('rate', D('0')))
+        try:
+            rsp = requests.get(OPEN_EXCHANGE_URL.format(
+                api_key=OPEN_EXCHANGE_API_KEY))
+        except Exception:
+            logger.error("could not retrieve currency conversion rates")
+            return
+
+        oex_rates = rsp.json()['rates']
+        display_rate = D(oex_rates.get(self.display_currency))
+
+        for code, rate in oex_rates.items():
+            self.conversion_rates[code] = display_rate * (D('1.0') / D(rate))
 
 
 def main():
@@ -196,6 +206,9 @@ def main():
         debug=arguments.get('--debug', False)
     )
 
+    if arguments.get('open'):
+        gm.open(arguments.get('<bank_code>'))
+
     if arguments.get('list'):
         gm.list()
 
@@ -203,7 +216,7 @@ def main():
         gm.check_banks()
 
     if arguments.get('check'):
-        gm.check_banks(arguments.get('<bank_code>', []))
+        gm.check_banks([arguments.get('<bank_code>')])
 
 
 if __name__ == "__main__":
