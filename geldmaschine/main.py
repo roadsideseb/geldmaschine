@@ -4,10 +4,10 @@
 Geldmachine
 
 Usage:
-    geldmaschine open <bank_code>
+    geldmaschine open BANKCODE
     geldmaschine list [--debug]
     geldmaschine all [--debug] [-d <webdriver>]
-    geldmaschine check [--debug] [-d <webdriver>] <bank_code>
+    geldmaschine check BANKCODE [--debug] [-d <webdriver>]
     geldmaschine -h | --help
 """
 import os
@@ -116,11 +116,13 @@ class Geldmachine(object):
             try:
                 scraper.run()
             except Exception as exc:
-                six.print_(
-                    "Error running scarper {}. Skipping it!".format(code)
-                )
-                six.print_(exc.args)
-                return
+                msg = "Error running scarper {}. Skipping it!".format(code)
+                six.print_(msg)
+                logger.error(msg, exc_info=1)
+                six.print_(exc.args[0])
+                scraper.take_screenshot()
+                scraper.save_page_source()
+                continue
             else:
                 accounts[scraper.get_name()] = scraper.get_accounts()
                 self.browsers.append(scraper.browser)
@@ -200,6 +202,8 @@ def main():
 
     if arguments.get('--debug'):
         logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
 
     gm = Geldmachine(
         driver=arguments.get('<webdriver>') or 'phantomjs',
@@ -207,7 +211,7 @@ def main():
     )
 
     if arguments.get('open'):
-        gm.open(arguments.get('<bank_code>'))
+        gm.open(arguments.get('BANKCODE'))
 
     if arguments.get('list'):
         gm.list()
@@ -216,7 +220,7 @@ def main():
         gm.check_banks()
 
     if arguments.get('check'):
-        gm.check_banks([arguments.get('<bank_code>')])
+        gm.check_banks([arguments.get('BANKCODE')])
 
 
 if __name__ == "__main__":
